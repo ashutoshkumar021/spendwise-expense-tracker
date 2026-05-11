@@ -1,0 +1,22 @@
+services:
+  # Web Service for Full Stack Application
+  - type: web
+    name: spendwise-expense-tracker
+    env: node
+    plan: free
+    buildCommand: "npm run install-all && npm run build"
+    startCommand: "npm start"
+    healthCheckPath: /api
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: PORT
+        value: 10000
+
+  # MongoDB Atlas (Manual Setup Required)
+  # You'll need to create a free MongoDB Atlas account
+  # and add the connection string as an environment variable

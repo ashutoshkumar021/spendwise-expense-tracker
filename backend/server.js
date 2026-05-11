@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const path = require('path');
 const connectDB = require('./config/db');
 
 // Load environment variables
@@ -21,8 +22,16 @@ app.use('/api/expenses', require('./routes/expenses'));
 app.use('/api/budget', require('./routes/budget'));
 app.use('/api/income', require('./routes/income'));
 
+// Serve static files from frontend build
+app.use(express.static(path.join(__dirname, '../frontend/dist/frontend')));
+
+// Serve frontend for all routes (SPA routing)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/dist/frontend/index.html'));
+});
+
 // Health check
-app.get('/', (req, res) => {
+app.get('/api', (req, res) => {
   res.json({ message: 'SpendWise API is running 🚀' });
 });
 
