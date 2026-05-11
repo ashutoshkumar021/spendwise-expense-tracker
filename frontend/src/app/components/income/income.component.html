@@ -1,0 +1,253 @@
+<div class="income-container">
+  <div class="page-header">
+    <div>
+      <h1>💰 Income Tracker</h1>
+      <p>Track your earnings and financial growth</p>
+    </div>
+    <button class="btn-primary btn-add-large" (click)="openAddForm()">
+      <span>+</span> Add Income
+    </button>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="quick-stats-section" *ngIf="!loading">
+    <h3>📊 Quick Stats</h3>
+    <div class="quick-stats-row">
+      <div class="quick-stat-card enhanced">
+        <div class="quick-stat-header">
+          <div class="quick-stat-icon primary">
+            💰
+          </div>
+          <button class="btn-privacy-card" (click)="togglePrivacy('total')" [title]="showTotalIncome ? 'Hide' : 'Show'">
+            {{ showTotalIncome ? '👁️' : '👁️‍🗨️' }}
+          </button>
+        </div>
+        <div class="quick-stat-info">
+          <div class="quick-stat-value">{{ formatTotal(totalIncome, showTotalIncome) }}</div>
+          <div class="quick-stat-label">Total Income</div>
+        </div>
+      </div>
+      <div class="quick-stat-card enhanced">
+        <div class="quick-stat-header">
+          <div class="quick-stat-icon success">
+            📊
+          </div>
+          <button class="btn-privacy-card" (click)="togglePrivacy('average')" [title]="showAverageIncome ? 'Hide' : 'Show'">
+            {{ showAverageIncome ? '👁️' : '👁️‍🗨️' }}
+          </button>
+        </div>
+        <div class="quick-stat-info">
+          <div class="quick-stat-value">{{ formatTotal(averageIncome, showAverageIncome) }}</div>
+          <div class="quick-stat-label">Average Income</div>
+        </div>
+      </div>
+      <div class="quick-stat-card enhanced" *ngIf="highestIncome">
+        <div class="quick-stat-header">
+          <div class="quick-stat-icon warning">
+            🏆
+          </div>
+          <button class="btn-privacy-card" (click)="togglePrivacy('highest')" [title]="showHighestIncome ? 'Hide' : 'Show'">
+            {{ showHighestIncome ? '👁️' : '👁️‍🗨️' }}
+          </button>
+        </div>
+        <div class="quick-stat-info">
+          <div class="quick-stat-value">{{ formatTotal(highestIncome.amount, showHighestIncome) }}</div>
+          <div class="quick-stat-label">Highest Income</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-bar">
+    <div class="search-wrapper">
+      <span class="search-icon">🔍</span>
+      <input 
+        type="text" 
+        placeholder="Search by title, category..." 
+        [(ngModel)]="filterCategory"
+        (keyup.enter)="loadIncome()"
+      >
+    </div>
+    <div class="filter-group">
+      <select [(ngModel)]="filterMonth" (change)="loadIncome()">
+        <option value="">All Months</option>
+        <option *ngFor="let month of months" [value]="month.value">
+          {{ month.name }}
+        </option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <select [(ngModel)]="filterYear" (change)="loadIncome()">
+        <option value="">All Years</option>
+        <option *ngFor="let year of years" [value]="year">{{ year }}</option>
+      </select>
+    </div>
+    <button class="btn-clear" (click)="clearFilters()" *ngIf="filterCategory || filterMonth || filterYear">
+      Clear Filters
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-overlay" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Loading income...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="!loading && income.length === 0">
+    <div class="empty-icon">💰</div>
+    <h3>No Income Records</h3>
+    <p>Start tracking your income by adding your first entry</p>
+    <button class="btn-primary" (click)="openAddForm()">Add Your First Income</button>
+  </div>
+
+  <!-- Income Table -->
+  <div class="table-section" *ngIf="!loading && income.length > 0">
+    <div class="table-header">
+      <h3>💵 Income Records</h3>
+      <button class="btn-privacy-card btn-privacy-table" (click)="togglePrivacy('table')" [title]="showTableAmounts ? 'Hide Amounts' : 'Show Amounts'">
+        {{ showTableAmounts ? '👁️' : '👁️‍🗨️' }}
+        <span>{{ showTableAmounts ? 'Hide' : 'Show' }}</span>
+      </button>
+    </div>
+    <div class="table-wrapper">
+      <table class="income-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Title</th>
+            <th>Category & Amount</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let inc of income">
+            <td>{{ formatDate(inc.date) }}</td>
+            <td class="title-cell">{{ inc.title }}</td>
+            <td class="category-amount-cell">
+              <span class="category-badge">
+                {{ getCategoryIcon(inc.category) }} {{ inc.category }}
+              </span>
+              <span class="amount-display">{{ formatAmount(inc.amount, showTableAmounts) }}</span>
+            </td>
+            <td class="actions-cell">
+              <button class="btn-icon btn-edit" (click)="openEditForm(inc)" title="Edit">
+                ✏️
+              </button>
+              <button class="btn-icon btn-delete" (click)="confirmDelete(inc._id)" title="Delete">
+                🗑️
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Add/Edit Modal -->
+  <div class="modal-overlay" *ngIf="showForm" (click)="closeForm()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ editingIncome ? 'Edit Income' : 'Add Income' }}</h2>
+        <button class="btn-close" (click)="closeForm()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Title *</label>
+          <input 
+            type="text" 
+            [(ngModel)]="formTitle" 
+            placeholder="Enter income title"
+          >
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Amount (₹) *</label>
+            <input 
+              type="number" 
+              [(ngModel)]="formAmount" 
+              placeholder="0.00"
+              min="0"
+              step="0.01"
+            >
+          </div>
+          <div class="form-group">
+            <label>Category *</label>
+            <select [(ngModel)]="formCategory">
+              <option value="">Select category</option>
+              <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Date</label>
+          <input 
+            type="date" 
+            [(ngModel)]="formDate"
+          >
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea 
+            [(ngModel)]="formDescription" 
+            placeholder="Add a description (optional)"
+            rows="3"
+          ></textarea>
+        </div>
+        <div class="form-group">
+          <label>Tags</label>
+          <div class="tags-input">
+            <input 
+              type="text" 
+              [(ngModel)]="formTagInput" 
+              placeholder="Add tag and press Enter"
+              (keyup.enter)="addTag()"
+            >
+            <button class="btn-quick" (click)="addTag()">Add</button>
+          </div>
+          <div class="tags-list" *ngIf="formTags.length > 0">
+            <span 
+              class="tag-chip" 
+              *ngFor="let tag of formTags"
+              (click)="removeTag(tag)"
+            >
+              {{ tag }} ✕
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <div class="form-actions">
+          <button class="btn-secondary" (click)="closeForm()">Cancel</button>
+          <button class="btn-primary" (click)="submitForm()" [disabled]="formLoading">
+            {{ formLoading ? 'Saving...' : (editingIncome ? 'Update' : 'Add') }} Income
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-overlay" *ngIf="deleteConfirmId" (click)="cancelDelete()">
+    <div class="modal-card modal-small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Delete Income</h2>
+        <button class="btn-close" (click)="cancelDelete()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="confirm-content">
+          <div class="confirm-icon">⚠️</div>
+          <h3>Are you sure?</h3>
+          <p>This action cannot be undone.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <div class="form-actions">
+          <button class="btn-secondary" (click)="cancelDelete()">Cancel</button>
+          <button class="btn-danger" (click)="deleteIncome(deleteConfirmId)">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

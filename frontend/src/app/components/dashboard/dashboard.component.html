@@ -1,0 +1,228 @@
+<div class="dashboard-container">
+  <div class="page-header">
+    <div>
+      <h1>Dashboard</h1>
+      <p>Welcome back! Here's your financial overview.</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-refresh" (click)="loadData()" title="Refresh Dashboard">
+        🔄 Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-overlay" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Loading your data...</p>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="summary-cards" *ngIf="!loading">
+    <div class="summary-card card-spent">
+      <div class="card-icon">💸</div>
+      <div class="card-info">
+        <span class="card-label">Total Spent This Month</span>
+        <span class="card-value">{{ formatAmount(totalSpent, spentPrivacyMode) }}</span>
+      </div>
+    </div>
+    <div class="summary-card card-budget">
+      <div class="card-icon">🎯</div>
+      <div class="card-info">
+        <span class="card-label">Total Budget Set</span>
+        <span class="card-value">{{ formatAmount(totalBudget) }}</span>
+      </div>
+    </div>
+    <div class="summary-card card-transactions">
+      <div class="card-icon">📊</div>
+      <div class="card-info">
+        <span class="card-label">Transactions This Month</span>
+        <span class="card-value">{{ transactionCount }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="charts-row" *ngIf="!loading">
+    <div class="chart-card">
+      <h3>Spending by Category</h3>
+      <div class="chart-wrapper">
+        <canvas id="pieChart"></canvas>
+        <div class="empty-chart" *ngIf="!hasCategoryData">
+          <p>No category data available</p>
+        </div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>Monthly Spending Trend</h3>
+      <div class="chart-wrapper">
+        <canvas id="barChart"></canvas>
+        <div class="empty-chart" *ngIf="!hasMonthlyData">
+          <span>📈</span>
+          <p>No historical data available yet.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Financial Insights -->
+  <div class="financial-insights-section" *ngIf="!loading">
+    <h3>💰 Financial Insights</h3>
+    
+    <!-- Income vs Spending Overview -->
+    <div class="income-spending-overview">
+      <div class="overview-card income-card">
+        <div class="overview-icon">💵</div>
+        <div class="overview-info">
+          <span class="overview-label">Total Income</span>
+          <span class="overview-value">{{ formatAmount(totalIncome, incomePrivacyMode) }}</span>
+        </div>
+        <button class="btn-privacy-small" (click)="toggleIncomePrivacy()" title="Toggle Income Privacy">
+          <span>{{ incomePrivacyMode ? '👁️‍🗨️' : '👁️' }}</span>
+        </button>
+      </div>
+      
+      <div class="overview-card spent-card">
+        <div class="overview-icon">💸</div>
+        <div class="overview-info">
+          <span class="overview-label">Total Spent</span>
+          <span class="overview-value">{{ formatAmount(totalSpent, spentPrivacyMode) }}</span>
+        </div>
+        <button class="btn-privacy-small" (click)="toggleSpentPrivacy()" title="Toggle Spent Privacy">
+          <span>{{ spentPrivacyMode ? '👁️‍🗨️' : '👁️' }}</span>
+        </button>
+      </div>
+      
+      <div class="overview-card savings-card" [ngClass]="getSavingsClass()">
+        <div class="overview-icon">🎯</div>
+        <div class="overview-info">
+          <span class="overview-label">Remaining/Savings</span>
+          <span class="overview-value">{{ formatAmount(totalIncome - totalSpent, savingsPrivacyMode) }}</span>
+        </div>
+        <button class="btn-privacy-small" (click)="toggleSavingsPrivacy()" title="Toggle Savings Privacy">
+          <span>{{ savingsPrivacyMode ? '👁️‍🗨️' : '👁️' }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Financial Health Score -->
+    <div class="financial-health-card" *ngIf="totalIncome > 0">
+      <div class="health-header">
+        <h4>📊 Financial Health Score</h4>
+        <span class="health-score" [ngClass]="getHealthScoreClass()">{{ financialHealthScore }}/100</span>
+      </div>
+      <div class="health-progress">
+        <div class="health-bar" [style.width.%]="financialHealthScore" [ngClass]="getHealthScoreClass()"></div>
+      </div>
+      <p class="health-message">{{ getFinancialHealthMessage() }}</p>
+    </div>
+
+    <!-- Smart Suggestions -->
+    <div class="suggestions-card" *ngIf="currentSuggestions.length > 0">
+      <h4>🤖 Smart Money Tips</h4>
+      <div class="suggestion-list">
+        <div class="suggestion-item" *ngFor="let suggestion of currentSuggestions" [ngClass]="'suggestion-' + suggestion.type">
+          <span class="suggestion-icon">{{ suggestion.icon }}</span>
+          <div class="suggestion-content">
+            <span class="suggestion-title">{{ suggestion.title }}</span>
+            <span class="suggestion-text">{{ suggestion.text }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Investment Recommendations -->
+    <div class="investment-card" *ngIf="totalIncome > 0 && (totalIncome - totalSpent) > 0 && currentInvestmentOptions.length > 0">
+      <h4>📈 Investment Opportunities</h4>
+      <div class="investment-grid">
+        <div class="investment-option" *ngFor="let option of currentInvestmentOptions" (click)="openInvestmentModal(option)">
+          <div class="investment-header">
+            <span class="investment-icon">{{ option.icon }}</span>
+            <span class="investment-name">{{ option.name }}</span>
+            <span class="investment-risk" [ngClass]="'risk-' + option.risk">{{ option.riskLabel }}</span>
+          </div>
+          <div class="investment-details">
+            <span class="investment-returns">📊 Returns: {{ option.returns }}</span>
+            <span class="investment-amount">💰 Suggested: {{ formatAmount(option.suggestedAmount, spentPrivacyMode) }}</span>
+          </div>
+          <p class="investment-desc">{{ option.description }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Budget Status -->
+  <div class="budget-status-section" *ngIf="!loading">
+    <h3>Budget Status</h3>
+    <div class="budget-grid">
+      <div class="budget-card" *ngFor="let item of budgetStatus" [ngClass]="getStatusClass(item.status)">
+        <div class="budget-card-header">
+          <span class="budget-icon">{{ getCategoryIcon(item.category) }}</span>
+          <span class="budget-category">{{ item.category }}</span>
+          <span class="budget-badge" [ngClass]="'badge-' + item.status">
+            {{ item.status | titlecase }}
+          </span>
+        </div>
+        <div class="budget-amounts">
+          <span>₹{{ item.spent | number }} / ₹{{ item.limit | number }}</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" [style.width.%]="item.percentage > 100 ? 100 : item.percentage"
+            [ngClass]="'bar-' + item.status">
+          </div>
+        </div>
+        <span class="budget-percentage">{{ item.percentage }}%</span>
+      </div>
+    </div>
+
+    <div class="empty-state" *ngIf="budgetStatus.length === 0 || totalBudget === 0">
+      <p>🎯 No budgets set yet. Go to the Budget page to set your monthly limits!</p>
+    </div>
+  </div>
+
+  <!-- Investment Details Modal -->
+  <div class="modal-overlay" *ngIf="showInvestmentModal" (click)="closeInvestmentModal()">
+    <div class="modal-content investment-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span class="modal-icon">{{ selectedInvestment?.icon }}</span>
+          <h2>{{ selectedInvestment?.name }}</h2>
+        </div>
+        <button class="modal-close" (click)="closeInvestmentModal()">✕</button>
+      </div>
+      
+      <div class="modal-body">
+        <!-- Risk Level -->
+        <div class="modal-section">
+          <h4>🎯 Risk Level</h4>
+          <div class="risk-badge" [ngClass]="'risk-' + selectedInvestment?.risk">
+            {{ selectedInvestment?.riskLabel }} Risk
+          </div>
+        </div>
+
+        <!-- Expected Returns -->
+        <div class="modal-section">
+          <h4>📈 Expected Returns</h4>
+          <p class="modal-highlight">{{ selectedInvestment?.returns }}</p>
+        </div>
+
+        <!-- Suggested Amount -->
+        <div class="modal-section">
+          <h4>💰 Suggested Investment</h4>
+          <p class="modal-highlight">{{ formatAmount(selectedInvestment?.suggestedAmount, spentPrivacyMode) }}</p>
+        </div>
+
+        <!-- Description -->
+        <div class="modal-section">
+          <h4>📝 About This Investment</h4>
+          <p class="modal-description">{{ selectedInvestment?.description }}</p>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="modal-actions">
+          <button class="btn-secondary" (click)="closeInvestmentModal()">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

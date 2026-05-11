@@ -1,0 +1,34 @@
+<nav class="navbar" *ngIf="authService.isLoggedIn()">
+  <div class="nav-container">
+    <a routerLink="/dashboard" class="nav-brand">
+      <span class="brand-icon">💰</span>
+      <span class="brand-text">SpendWise</span>
+    </a>
+
+    <button class="menu-toggle" (click)="toggleMenu()">
+      <span class="hamburger" [class.active]="menuOpen"></span>
+    </button>
+
+    <div class="nav-links" [class.active]="menuOpen">
+      <a routerLink="/dashboard" routerLinkActive="active" (click)="menuOpen=false">
+        <span>📊</span> Dashboard
+      </a>
+      <a routerLink="/expenses" routerLinkActive="active" (click)="menuOpen=false">
+        <span>💳</span> Expenses
+      </a>
+      <a routerLink="/income" routerLinkActive="active" (click)="menuOpen=false">
+        <span>💰</span> Income
+      </a>
+      <a routerLink="/budget" routerLinkActive="active" (click)="menuOpen=false">
+        <span>🎯</span> Budget
+      </a>
+    </div>
+
+    <div class="nav-user" [class.active]="menuOpen">
+      <span class="user-name">👋 {{ userName }}</span>
+      <button class="btn-logout" (click)="logout()">
+        <span>🚪</span> Logout
+      </button>
+    </div>
+  </div>
+</nav>
