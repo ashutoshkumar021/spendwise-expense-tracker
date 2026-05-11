@@ -1,5 +1,5 @@
 services:
-  # Web Service for Full Stack Application
+  # Full Stack Web Service (Frontend + Backend)
   - type: web
     name: spendwise-expense-tracker
     env: node
@@ -16,7 +16,3 @@ services:
         sync: false
       - key: PORT
         value: 10000
-
-  # MongoDB Atlas (Manual Setup Required)
-  # You'll need to create a free MongoDB Atlas account
-  # and add the connection string as an environment variable
