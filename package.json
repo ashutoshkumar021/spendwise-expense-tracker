@@ -8,7 +8,7 @@
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "cd backend && npm start",
     "client": "cd frontend && ng serve",
-    "build": "cd frontend && npm run build",
+    "build": "cd frontend && npx ng build",
     "install-client": "cd frontend && npm install",
     "install-server": "cd backend && npm install",
     "install-all": "npm install && npm run install-client && npm run install-server",
